@@ -1,9 +1,31 @@
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 import sqlite3
 import random
 import asyncio
+import threading
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+
+# --- AUTOMATED RENDER WEB PORT BYPASS HACK ---
+# This opens a quiet background port so Render's free tier health checks pass smoothly!
+def run_dummy_server():
+    class SafeHandler(SimpleHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"ShieldBot is alive and guarding the gng 24/7!")
+            
+    # Render automatically hands us a variable called PORT. Default to 10000 if not found.
+    import os
+    port = int(os.getenv("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), SafeHandler)
+    server.serve_forever()
+
+# Fire the fake web server on a separate hidden thread so it doesn't lag your bot!
+threading.Thread(target=run_dummy_server, daemon=True).start()
+
 
 # --- Setup Bot and Intents ---
 intents = discord.Intents.default()
