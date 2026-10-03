@@ -258,13 +258,207 @@ async def rollfruit(interaction: discord.Interaction):
         
     await interaction.response.send_message(embed=embed)
 
-# --- Boot Engine Execution ---
-# This line tells the bot to look into Render's secret cloud vault instead of reading the file!
+import threading
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+
+def run_dummy_server():
+    class SafeHandler(SimpleHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"ShieldBot is alive and guarding the gng 24/7!")
+            
+    import os
+    port = int(os.getenv("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), SafeHandler)
+    server.serve_forever()
+
+# Fire the fake web server on a separate hidden thread so it doesn't lag your bot!
+threading.Thread(target=run_dummy_server, daemon=True).start()
+
+# --- MODULE A: BLOX FRUITS TALK SYSTEMS ---
+@bot.tree.command(name="raid", description="Simulate a Blox Fruits raid to earn fragment currencies!")
+@app_commands.describe(boss="Choose the Raid Boss dungeon to conquer")
+@app_commands.choices(boss=[
+    app_commands.Choice(name="Flame Raid 🔥", value="flame"),
+    app_commands.Choice(name="Ice Raid 🧊", value="ice"),
+    app_commands.Choice(name="Buddha Raid 🧘", value="buddha")
+])
+async def raid(interaction: discord.Interaction, boss: app_commands.Choice[str]):
+    outcomes = [
+        f"⚔️ **SUCCESS!** The crew completely melted the **{boss.name}**. You earned **1,000 Fragments**! 💎",
+        f"⚠️ **AWFUL LUCK!** The crew got wiped out on Island 4. You lost **100 Fragments** to awakening expenses.",
+        f"👑 **PERFECT RUN!** You solo'd the **{boss.name}** in record time! You earned **1,500 Fragments**!"
+    ]
+    await interaction.response.send_message(f"🏴‍☠️ **RAID MATRIX LOG**\n\n{random.choice(outcomes)}")
+
+@bot.tree.command(name="trade", description="List your digital inventory fruits for active trade swaps.")
+@app_commands.describe(giving="The fruit you are putting on the table", wanting="The fruit you are looking to get back")
+async def trade(interaction: discord.Interaction, giving: str, wanting: str):
+    embed = discord.Embed(title="🍉 PHYSICAL FRUIT TRADING LISTING", color=discord.Color.green())
+    embed.add_field(name="Trader Profile", value=interaction.user.mention, inline=False)
+    embed.add_field(name="🤝 GIVING AWAY", value=f"**{giving.upper()}**", inline=True)
+    embed.add_field(name="🔮 LOOKING FOR", value=f"**{wanting.upper()}**", inline=True)
+    embed.set_footer(text="Message this user or reply in the dealer channel to trade!")
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="spawnclock", description="Check the status tracker for legendary world chests and bosses.")
+async def spawnclock(interaction: discord.Interaction):
+    status = [
+        "🏴‍☠️ **FACTORY INVASION:** The Core is currently **UNPROTECTED**! The raid event starts in **5 minutes**! ⚙️",
+        "FOX **MIRAGE ISLAND:** Spawning conditions are currently **INACTIVE**. Wait for a full moon! 🌕",
+        "💎 **LEGENDARY SWORD DEALER:** A mysterious salesman was spotted roaming Second Sea **12 minutes ago**!"
+    ]
+    await interaction.response.send_message(f"🕒 **WORLD WORLD ALERTS**\n\n{random.choice(status)}")
+
+@bot.tree.command(name="bossfight", description="Fight an automated Legendary Raid Boss to test your build damage!")
+async def bossfight(interaction: discord.Interaction):
+    bosses = ["Indra 👑", "Don Swan 🦩", "Blackbeard 🏴‍☠️", "Rip_Indra 🗡️"]
+    target_boss = random.choice(bosses)
+    damage = random.randint(5000, 120000)
+    if damage > 80000:
+        msg = f"🏆 **GODLY KILL!** You smashed **{target_boss}** for **{damage:,} damage** and got a Mythical Item Drop!"
+    else:
+        msg = f"💀 **WIPED!** **{target_boss}** broke your Ken Haki shield and dealt massive lethal damage to you."
+    await interaction.response.send_message(f"⚔️ **ARENA LOG:**\n{msg}")
+
+@bot.tree.command(name="buildcheck", description="Let the bot evaluate your allocated stat point distributions.")
+@app_commands.describe(melee="Melee Points", defense="Defense Points", sword="Sword Points", fruit="Blox Fruit Points")
+async def buildcheck(interaction: discord.Interaction, melee: int, defense: int, sword: int, fruit: int):
+    total = melee + defense + sword + fruit
+    if total > 10000:
+        rating = "💎 **MAX LEVEL GOD:** Your stat attributes look completely broken. Go hunt some bounties!"
+    elif fruit > sword and fruit > 1500:
+        rating = "🍇 **FRUIT SPAMMER BUILD:** You rely heavily on elemental skills. Insane raw damage!"
+    else:
+        rating = "⚓ **AVERAGE PIRATE:** Balanced stats. Keep grinding levels inside the Second Sea!"
+    await interaction.response.send_message(f"📊 **STAT CHECK FOR {interaction.user.name}:**\n\nTotal: **{total:,} points**\nVerdict: {rating}")
+
+@bot.tree.command(name="crew", description="Create an official recruitment poster card for your Pirate Crew faction.")
+@app_commands.describe(crew_name="The name of your group", bounty="Minimum bounty requirements to join")
+async def crew(interaction: discord.Interaction, crew_name: str, bounty: str):
+    embed = discord.Embed(title=f"🏴‍☠️ PIRATE CREW RECRUITMENT: [{crew_name.upper()}]", color=discord.Color.dark_red())
+    embed.add_field(name="Faction Captain", value=interaction.user.mention, inline=True)
+    embed.add_field(name="⚓ Entry Barrier", value=f"**{bounty} Bounty Minimum**", inline=True)
+    embed.set_thumbnail(url=interaction.user.display_avatar.url)
+    embed.set_footer(text="React below or contact the captain to join!")
+    await interaction.response.send_message(embed=embed)
+
+# --- MODULE B: GAMING UTILITIES & PRANKS ---
+@bot.tree.command(name="imposter", description="[Owner Only] Force the bot to copy a user's nickname and message.")
+@app_commands.describe(target="The user to mirror", text="The message to say")
+async def imposter(interaction: discord.Interaction, target: discord.Member, text: str):
+    if interaction.user.id != interaction.guild.owner_id:
+        await interaction.response.send_message("❌ Access Denied: Unauthorized Operator.", ephemeral=True)
+        return
+    await interaction.response.send_message(f"🕵️ Copying patterns for {target.name}...", ephemeral=True)
+    await interaction.channel.send(f"💬 **{target.name}**: {text}")
+
+@bot.tree.command(name="pingcheck", description="Calculate the true network packet response speeds of the cloud wrapper.")
+async def pingcheck(interaction: discord.Interaction):
+    latency = round(bot.latency * 1000)
+    quality = "🟢 **FIBER EXPLOIT SPEED:** Wi-Fi is executing beautifully!" if latency < 80 else "🔴 **LAG SPIKE:** Network delay detected."
+    await interaction.response.send_message(f"📶 **MATRIX LOG:**\n⏱️ Ping Latency: **{latency}ms**\nNetwork Integrity: {quality}")
+
+@bot.tree.command(name="cooldown", description="Start an automatic 30-second localized farming timer alert.")
+async def cooldown(interaction: discord.Interaction):
+    await interaction.response.send_message("⏳ **FARMING CLOCK STARTED:** 30-second farming cycle active. Focus up gng!")
+    await asyncio.sleep(30)
+    await interaction.channel.send(f"🔔 {interaction.user.mention} **TIMER EXPIRED!** Boss respawned. Go clear the camp!")
+
+@bot.tree.command(name="fakeban", description="Execute a funny simulated fake enforcement ban sequence on a friend.")
+@app_commands.describe(target="The member instance to prank")
+async def fakeban(interaction: discord.Interaction, target: discord.Member):
+    await interaction.response.send_message("📡 Connecting to Sockets...", ephemeral=True)
+    msg = await interaction.channel.send(f"🔨 **ENFORCEMENT ACTION:** Terminating credentials for **{target.mention}**...")
+    await asyncio.sleep(1.5)
+    await msg.edit(content=f"🚫 **PRANK DEPLOYED!** Gotcha {target.mention}! You aren't actually banned. 🤡")
+
+@bot.tree.command(name="vibegen", description="Calculate the energetic frequency score index of the active server chat.")
+async def vibegen(interaction: discord.Interaction):
+    score = random.randint(1, 100)
+    verdict = "🔥 **HYPERDRIVE ACTIVATED:** The gng is grinding hard!" if score > 50 else "💀 **DEAD WASTELAND:** Chat liquidity is frozen."
+    await interaction.response.send_message(f"🔮 **VIBE RADAR CHECK:**\n📈 Energy Score: **{score}%**\nStatus Check: {verdict}")
+
+# --- MODULE C: MINI-ECONOMY & INTERACTIVE FUN ---
+@bot.tree.command(name="rob", description="Attempt a risky heist on a friend's hypothetical token balance.")
+@app_commands.describe(target="The friend instance profile you want to target")
+async def rob(interaction: discord.Interaction, target: discord.Member):
+    if target.id == interaction.user.id or target.bot:
+        await interaction.response.send_message("❌ Target validation exception.", ephemeral=True)
+        return
+    success = random.choice([True, False])
+    amount = random.randint(50, 400)
+    if success:
+        await interaction.response.send_message(f"🥷 **HEIST SUCCESSFUL!** You sneaked into **{target.name}**'s inventory and stole **₱{amount} Server Coins**! 💸")
+    else:
+        await interaction.response.send_message(f"👮 **CAUGHT ON RADAR!** **{target.name}** counter-attacked and fined you **₱100 Coins**!")
+
+@bot.tree.command(name="lovemeter", description="Calculate the compatibility percentage between two names.")
+@app_commands.describe(user1="First Target", user2="Second Target")
+async def lovemeter(interaction: discord.Interaction, user1: str, user2: str):
+    score = random.randint(1, 100)
+    heart = "❤️" if score > 75 else "💔"
+    await interaction.response.send_message(f"🔮 **LOVE ENGINE CALCULATION:**\n👥 **{user1}** x **{user2}**\n📈 Match Score: **{score}%** {heart}")
+
+@bot.tree.command(name="oracle", description="Ask the bot a yes/no question about your future luck.")
+@app_commands.describe(question="The question string you seek an answer for")
+async def oracle(interaction: discord.Interaction, question: str):
+    answers = ["🟢 **CONFIRMED:** Calculations strongly match a positive outcome. Go drop that bet!", "🟡 **OBSCURE DATA:** Timeline fluctuations high. Try again.", "🔴 **PROBABILITY ZERO:** System registers full structural failure."]
+    await interaction.response.send_message(f"❓ **Question:** *\"{question}\"*\n🔮 **Oracle Prediction:** {random.choice(answers)}")
+
+@bot.tree.command(name="iqtest", description="Scan a member's chat patterns to calculate their processing IQ score.")
+@app_commands.describe(target="The target instance profile to analyze")
+async def iqtest(interaction: discord.Interaction, target: discord.Member):
+    score = random.randint(40, 160)
+    desc = "🧠 **SUPERCOMPUTER MATRIX:** Real engineering intelligence found!" if score > 110 else "🍌 **BANANA CORE PROCESSING:** Brain loops short-circuiting constantly."
+    await interaction.response.send_message(f"🧠 **IQ ANALYZER:**\nTarget: {target.mention}\n📈 Calculated Score: **{score} IQ**\nClassification: {desc}")
+
+@bot.tree.command(name="dice", description="Roll a set of random dice to settle arguments.")
+async def dice(interaction: discord.Interaction):
+    d1, d2 = random.randint(1, 6), random.randint(1, 6)
+    await interaction.response.send_message(f"🎲 **DICE ROLLER:**\n🎲 Die A: **{d1}** | Die B: **{d2}**\n📊 Combined Sum: **{d1 + d2}**")
+
+# --- MODULE D: SERVER UTILITIES & DOCUMENTATION ---
+@bot.tree.command(name="serverinfo", description="Extract the background network architectural data of this server.")
+async def serverinfo(interaction: discord.Interaction):
+    g = interaction.guild
+    embed = discord.Embed(title=f"📊 CLOUD ENVIRONMENT LOGS: {g.name}", color=discord.Color.blue())
+    embed.add_field(name="Server ID Snowflake", value=f"`{g.id}`", inline=False)
+    embed.add_field(name="Owner Operator ID", value=f"<@{g.owner_id}>", inline=True)
+    embed.add_field(name="Member Capacity", value=f"**{g.member_count} units**", inline=True)
+    embed.set_thumbnail(url=g.icon.url if g.icon else interaction.user.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="announce", description="[Admin Only] Broadcast a formatted announcement embed frame block.")
+@app_commands.describe(title="Announcement Header", message="The main announcement body content text")
+@app_commands.checks.has_permissions(administrator=True)
+async def announce(interaction: discord.Interaction, title: str, message: str):
+    embed = discord.Embed(title=f"📢 {title.upper()}", description=message, color=discord.Color.gold())
+    embed.set_footer(text=f"Authorized By: {interaction.user.name}")
+    await interaction.channel.send(embed=embed)
+    await interaction.response.send_message("Broadcast sent!", ephemeral=True)
+
+@bot.tree.command(name="dm_user", description="[Admin Only] Forward a private warning straight to a member's DMs.")
+@app_commands.describe(target="The member target", message="The warning text content string")
+@app_commands.checks.has_permissions(manage_messages=True)
+async def dm_user(interaction: discord.Interaction, target: discord.Member, message: str):
+    try:
+        await target.send(f"📥 **PRIVATE REGULATORY LOG FROM [{interaction.guild.name}]:**\(\nHello {target.name},\) an officer sent you this note: *\"{message}\"*")
+        await interaction.response.send_message(f"✅ Packet dispatched to **{target.name}**'s private DM pipeline!", ephemeral=True)
+    except discord.Forbidden:
+        await interaction.response.send_message("❌ Delivery failure: This user has their DMs blocked!", ephemeral=True)
+
+@bot.tree.command(name="botmanual", description="View the technical operational framework documentation of ShieldBot.")
+async def botmanual(interaction: discord.Interaction):
+    embed = discord.Embed(title="📜 SHIELDBOT OPERATIONAL MANUAL", color=discord.Color.dark_grey())
+    embed.add_field(name="⚙️ Core Script Engine", value="Compiled using Python 3 & Discord.py API wrappers.", inline=False)
+    embed.add_field(name="🛡️ Threat Response Perimeter", value="Automated deletions and warning updates apply instantly via SQL files.", inline=False)
+    embed.set_footer(text="System Status: Stable. Hosted 24/7 via Render Free Cloud.")
+    await interaction.response.send_message(embed=embed)
+
+
 import os
-bot.run(os.getenv("DISCORD_TOKEN"))
+bot.run(os.getenv("DISCORD_TOKEN")) 
 
-
-# --- How to insert your private assets securely ---
-# Copy this whole block into your laptop's Notepad app.
-# Replace the text below with your private token inside your private file!
-bot.run("")
